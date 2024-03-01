@@ -67,38 +67,82 @@ def get_fastais2LCAtaxid_file(database_folder):
     return fastaid2LCAtaxid_file
 
 
-def parse_tabular_alignment(alignment_file):
-
-    compressed = False
-    if alignment_file.endswith('.gz'):
-        compressed = True
-
-        f1 = gzip.open(alignment_file, 'rb')
-    else:
-        f1 = open(alignment_file, 'r')
-
+def parse_tabular_alignment(alignment_files):
     ORF2hits = {}
     all_hits = set()
-
-    ORF = 'first ORF'
-    for line in f1:
-        if compressed:
-            line = line.decode('utf-8')
-
-        line = line.rstrip().split('\t')
-
+    
+    
+    for alignment_file in alignment_files:
         
-        # A new ORF is reached. This is the top hit.
-        ORF = line[0]
-        if ORF not in ORF2hits:
-            ORF2hits[ORF] = []
-        hit = line[1]
-        ORF2hits[ORF].append(hit)
-        all_hits.add(hit)
-
-    f1.close()
+        compressed = False
+        if alignment_file.endswith('.gz'):
+            compressed = True
+    
+            f1 = gzip.open(alignment_file, 'rb')
+        else:
+            f1 = open(alignment_file, 'r')
+    
+        print("Parsing {}...".format(alignment_file))
+    
+        ORF = 'first ORF'
+        for line in f1:
+            if compressed:
+                line = line.decode('utf-8')
+    
+            line = line.rstrip().split('\t')
+    
+            
+            # A new ORF is reached. This is the top hit.
+            ORF = line[0]
+            if ORF not in ORF2hits:
+                ORF2hits[ORF] = []
+            hit = line[1]
+            ORF2hits[ORF].append(hit)
+            all_hits.add(hit)
+    
+        f1.close()
                 
     return ORF2hits, all_hits
+
+
+def parse_tabular_alignment_best_hit(alignment_files):
+    ORF2hits = {}
+    all_hits = set()
+    
+    
+    for alignment_file in alignment_files:
+        
+        compressed = False
+        if alignment_file.endswith('.gz'):
+            compressed = True
+    
+            f1 = gzip.open(alignment_file, 'rb')
+        else:
+            f1 = open(alignment_file, 'r')
+    
+        print("Parsing {}...".format(alignment_file))
+    
+        ORF = 'first ORF'
+        for line in f1:
+            if compressed:
+                line = line.decode('utf-8')
+    
+            line = line.rstrip().split('\t')
+    
+            
+            # A new ORF is reached. This is the top hit.
+            ORF = line[0]
+            if ORF not in ORF2hits:
+                ORF2hits[ORF] = []
+                hit = line[1]
+                ORF2hits[ORF].append(hit)
+                all_hits.add(hit)
+    
+        f1.close()
+                
+    return ORF2hits, all_hits
+
+
 
 def find_LCA_for_ORF(hits, fastaid2LCAtaxid, taxid2parent):
     list_of_lineages = []
@@ -177,7 +221,7 @@ def get_official_lineages(ORF2hits, fastaid2LCAtaxid, taxid2parent, taxid2rank):
     official_ids={}
 
     for ORF in ORF2hits:
-        hitlist=[ORF2hits[ORF][i].rsplit('_', 1)[0] for i in range(len(ORF2hits[ORF]))]
+        hitlist=[ORF2hits[ORF][i] for i in range(len(ORF2hits[ORF]))]
         (taxid, lineage) = find_LCA_for_ORF(hitlist, fastaid2LCAtaxid, 
                                             taxid2parent)
 
@@ -191,6 +235,59 @@ def get_official_lineages(ORF2hits, fastaid2LCAtaxid, taxid2parent, taxid2rank):
     
         official_ids[ORF]=(official_lineage)
     return official_ids
+
+
+
+
+def get_official_lineages_verbose(ORF2hits, fastaid2LCAtaxid, taxid2parent, taxid2rank, v_outfile):
+    '''
+    FOR TINA 18.10.2023:
+        The idea for this function is to make it produce temporary output like
+        print statements and files so that I can figure out if/why pulling out
+        the lineages goes wrong.
+    '''
+    official_ids={}
+    verbose_dict={}
+
+    for ORF in ORF2hits:
+        verbose_dict[ORF]={
+            'taxid': '',
+            'lineage': [],
+            'ranks': [],
+            'official lineage': [],
+            'hitlist': []
+            }
+        
+        hitlist=[ORF2hits[ORF][i] for i in range(len(ORF2hits[ORF]))]
+        
+        verbose_dict[ORF]['hitlist']=hitlist
+        
+        (taxid, lineage) = find_LCA_for_ORF(hitlist, fastaid2LCAtaxid, 
+                                            taxid2parent)
+        
+
+        lineage.reverse()
+        lineage=[rank.rstrip('*') for rank in lineage]
+        ranks=[taxid2rank[rank] for rank in lineage]
+        
+        
+        verbose_dict[ORF]['taxid']=taxid
+        verbose_dict[ORF]['lineage']=lineage
+        verbose_dict[ORF]['ranks']=ranks
+        
+        official_lineage=len(official_ranks)*['']
+        for r in range(len(official_ranks)):
+            if official_ranks[r] in ranks:
+                official_lineage[r]=lineage[ranks.index(official_ranks[r])]
+    
+        official_ids[ORF]=(official_lineage)
+        verbose_dict[ORF]['official lineage']=official_lineage
+        with open(v_outfile, 'w') as outf:
+            outf.write(json.dumps(verbose_dict, indent=4))
+        
+    return official_ids
+
+
 
 
 
@@ -237,8 +334,12 @@ def import_CAMI_results(CAMI_read_mapping, taxid2parent, taxid2rank):
                 line=line.split('\t')
                 readid, taxid = line[0], line[2]
                 read2lineage[readid]=len(official_ranks)*['']
-                lineage=find_lineage(taxid, taxid2parent)
-                ranks=[taxid2rank[rank] for rank in lineage]
+                try:
+                    lineage=find_lineage(taxid, taxid2parent)
+                    ranks=[taxid2rank[rank] for rank in lineage]
+                except KeyError:
+                    lineage=['1',taxid]
+                    ranks=['no rank', 'no rank']
 
                 for r in range(len(official_ranks)):
                     if official_ranks[r] in ranks:
@@ -316,7 +417,7 @@ def timestamp():
     
 if __name__=='__main__':
 
-# # # Compare diamond results to official results
+# # # Compare diamond results to official results - mousegut
     
 #     CAMI_folder='/net/phage/linuxhome/mgx/people/bastiaan/CAT_prepare/CAT_prepare_20190108/'
 #     # benchmark='/net/phage/linuxhome/tina/RAT/benchmark/CAMI_high/'
@@ -351,6 +452,56 @@ if __name__=='__main__':
     
 #     with open('/home/tina/Documents/RAT/d2c_stats_mousegut_{}_against_nt.txt'.format(smp), 'w+') as outf:
 #         outf.write(json.dumps(correct, indent=4))
+
+
+
+# Compare diamond results to official results - marine/plant
+    env=sys.argv[1]
+    smp=sys.argv[2]
+    mode=sys.argv[3]
+    
+    if env=='marine':
+        prefix='2018.08.15_09.49.32'
+    elif env=='plant':
+        prefix='2019.09.27_13.59.10'
+    
+    CAMI_folder='/net/mgx/linuxhome/mgx/people/bastiaan/phage-files/CAT_prepare/CAT_prepare_20190108/'
+
+    alignment_file1='/net/phage/linuxhome/mgx/people/tina/RAT/revision/{}/diamond/{}{}_R1.diamond.gz'.format(env,env,smp)
+    alignment_file2='/net/phage/linuxhome/mgx/people/tina/RAT/revision/{}/diamond/{}{}_R2.diamond.gz'.format(env,env,smp)
+    
+
+    taxid2parent, taxid2rank = import_nodes(CAMI_folder+'2019-01-08_taxonomy/nodes.dmp')
+    fastaid2LCAtaxid_file=get_fastais2LCAtaxid_file(CAMI_folder+'2019-01-08_CAT_database/')
+    
+    print('load CAMI classification')
+    CAMI_r2c=import_CAMI_results('/net/phage/linuxhome/mgx/people/tina/CAMI_II/'
+                    '{}/simulation_short_read/{}_sample_{}/'
+                    'reads/reads_mapping.tsv'.format(env,prefix,smp),
+                    taxid2parent, taxid2rank)
+
+    print('load diamond results')
+    
+    if mode=='lca':
+        read2hits, all_hits = parse_tabular_alignment([alignment_file1, alignment_file2])
+    elif mode=='best':    
+        read2hits, all_hits = parse_tabular_alignment_best_hit([alignment_file1, alignment_file2])
+    fastaid2LCAtaxid = import_fastaid2LCAtaxid(fastaid2LCAtaxid_file, all_hits)
+    d2c_off=get_official_lineages(read2hits, fastaid2LCAtaxid, taxid2parent, taxid2rank)
+    
+
+    
+    print('{}{}: compare the diamond results to the supposed results'.format(env,smp))
+    correct=compare_results(CAMI_r2c, d2c_off)
+    correct['total_reads']=len(CAMI_r2c)
+    correct['unclassified_total']=len(CAMI_r2c)-len(d2c_off)
+    correct['corr_frac']=[i/(len(CAMI_r2c)) for i in correct['correct']]
+    
+    
+    with open('/home/tina/Documents/RAT/revision_diamond/d2c_stats_{}{}_against_nr_{}.txt'.format(env,smp,mode), 'w+') as outf:
+        outf.write(json.dumps(correct, indent=4))
+
+
 
 
 
@@ -400,29 +551,29 @@ if __name__=='__main__':
 
 
 
-### Get lineages for a few ORFs
-    CAT_folder='/net/mgx/linuxhome/mgx/people/bastiaan/phage-files/CAT_prepare/CAT_prepare_20210430/'
-    alignment_file=sys.argv[1]
-    print('Importing nodes...')
+# ### Get lineages for a few ORFs
+#     CAT_folder='/net/mgx/linuxhome/mgx/people/bastiaan/phage-files/CAT_prepare/CAT_prepare_20210430/'
+#     alignment_file=sys.argv[1]
+#     print('Importing nodes...')
     
-    taxid2parent, taxid2rank = import_nodes(CAT_folder+'CAT_taxonomy.2021-04-30/nodes.dmp')
-    fastaid2LCAtaxid_file=get_fastais2LCAtaxid_file(CAT_folder+'CAT_database.2021-04-30/')
+#     taxid2parent, taxid2rank = import_nodes(CAT_folder+'CAT_taxonomy.2021-04-30/nodes.dmp')
+#     fastaid2LCAtaxid_file=get_fastais2LCAtaxid_file(CAT_folder+'CAT_database.2021-04-30/')
     
-    print('Parsing alignment...')
-    read2hits, all_hits = parse_tabular_alignment(alignment_file)
-    print(read2hits)
-    print(all_hits)
+#     print('Parsing alignment...')
+#     read2hits, all_hits = parse_tabular_alignment(alignment_file)
+#     print(read2hits)
+#     print(all_hits)
     
-    print('Importing fastaid2LCAtaxid')
-    fastaid2LCAtaxid = import_fastaid2LCAtaxid(fastaid2LCAtaxid_file, all_hits)
-    print(fastaid2LCAtaxid)
-    
-    
-    # print('Getting official lineages')
-    # d2c_off=get_official_lineages(read2hits, fastaid2LCAtaxid, taxid2parent, taxid2rank)
+#     print('Importing fastaid2LCAtaxid')
+#     fastaid2LCAtaxid = import_fastaid2LCAtaxid(fastaid2LCAtaxid_file, all_hits)
+#     print(fastaid2LCAtaxid)
     
     
-    json.dump(fastaid2LCAtaxid, open('/net/phage/linuxhome/mgx/people/tina/E_coli_check/hits_info.json', 'w'))
+#     # print('Getting official lineages')
+#     # d2c_off=get_official_lineages(read2hits, fastaid2LCAtaxid, taxid2parent, taxid2rank)
+    
+    
+#     json.dump(fastaid2LCAtaxid, open('/net/phage/linuxhome/mgx/people/tina/E_coli_check/hits_info.json', 'w'))
 
 
 
@@ -464,3 +615,50 @@ if __name__=='__main__':
     
 #     with open('/home/tina/Documents/RAT/d2c_stats_mousegut_{}_against_nt.txt'.format(smp), 'w+') as outf:
 #         outf.write(json.dumps(correct, indent=4))
+
+    
+    
+    
+    
+    # # Compare diamond results to official results - marine
+    # mode=sys.argv[1]
+    
+    # CAMI_folder='/net/mgx/linuxhome/mgx/people/bastiaan/phage-files/CAT_prepare/CAT_prepare_20190108/'
+
+    # alignment_file='/net/phage/linuxhome/mgx/people/tina/RAT/revision/test_diamond/marine1_small.diamond'
+    
+    # taxid2parent, taxid2rank = import_nodes(CAMI_folder+'2019-01-08_taxonomy/nodes.dmp')
+    # fastaid2LCAtaxid_file=get_fastais2LCAtaxid_file(CAMI_folder+'2019-01-08_CAT_database/')
+    
+    # print('load CAMI classification')
+    # CAMI_r2c=import_CAMI_results('/net/phage/linuxhome/mgx/people/tina/CAMI_II/'
+    #                 'marine/simulation_short_read/2018.08.15_09.49.32_sample_1/'
+    #                 'reads/reads_mapping.small.tsv',
+    #                 taxid2parent, taxid2rank)
+
+    # print('load diamond results')
+    
+    # if mode=='lca':
+    #     read2hits, all_hits = parse_tabular_alignment([alignment_file])
+    # elif mode=='best':    
+    #     read2hits, all_hits = parse_tabular_alignment_best_hit([alignment_file])
+    # with open('/net/phage/linuxhome/mgx/people/tina/RAT/revision/test_diamond/d2c_read2hits_marine1_against_nr_{}_2.txt'.format(mode), 'w') as out1:
+    #     out1.write(json.dumps(read2hits, indent=4))
+    # fastaid2LCAtaxid = import_fastaid2LCAtaxid(fastaid2LCAtaxid_file, all_hits)
+    # v_outfile='/net/phage/linuxhome/mgx/people/tina/RAT/revision/test_diamond/d2c_verbose_lineages_marine1_against_nr_{}_2.txt'.format(mode)
+    
+    # d2c_off=get_official_lineages_verbose(read2hits, fastaid2LCAtaxid, taxid2parent, taxid2rank, v_outfile)
+
+    # with open('/net/phage/linuxhome/mgx/people/tina/RAT/revision/test_diamond/d2c_lineages_marine1_against_nr_{}_2.txt'.format(mode), 'w') as out1:
+    #     out1.write(json.dumps(d2c_off, indent=4))
+
+    
+    # print('Marine 1 small: compare the diamond results to the supposed results')
+    # correct=compare_results(CAMI_r2c, d2c_off)
+    # correct['total_reads']=len(CAMI_r2c)
+    # correct['unclassified_total']=len(CAMI_r2c)-len(d2c_off)
+    # correct['corr_frac']=[i/(len(CAMI_r2c)) for i in correct['correct']]
+    
+    
+    # with open('/net/phage/linuxhome/mgx/people/tina/RAT/revision/test_diamond/d2c_stats_marine1_against_nr_{}_2.txt'.format(mode), 'w+') as outf:
+    #     outf.write(json.dumps(correct, indent=4))

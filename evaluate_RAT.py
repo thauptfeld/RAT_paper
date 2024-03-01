@@ -197,8 +197,9 @@ def get_official_lineage2(read2classification, taxid2rank):
     read2official={}
     counts={'bin':0, 'contig': 0, 'contig_dm':0, 'read_dm':0}
     for read in read2classification:
-        if read2classification[read]!=4*['']:
-            read2official[read]=[]
+        read2official[read]=[]
+        official_lineage=len(official_ranks)*['']
+        if read2classification[read]!=4*['']:     
             if read2classification[read][0]!='':
                 lineage=read2classification[read][0].rstrip('*').split(';')
                 counts['bin']+=1
@@ -218,11 +219,12 @@ def get_official_lineage2(read2classification, taxid2rank):
                 print
                 sys.exit(1)
             ranks=[taxid2rank[rank] for rank in lineage]
-            official_lineage=len(official_ranks)*['']
+            
             for r in range(len(official_ranks)):
                 if official_ranks[r] in ranks:
                     official_lineage[r]=lineage[ranks.index(official_ranks[r])]
-            read2official[read]=official_lineage
+        read2official[read]=official_lineage
+            
     print('\n\n'+str(counts)+'\n\n')
     return read2official
 
@@ -260,13 +262,14 @@ def import_RAT_results(RAT_read_mapping):
                 line=line.rstrip().split('\t')
 #                print(line)
                 if line[0]==read_id.split('/')[0]:
-                    read_id=line[0]+'/1'
-                else:
                     read_id=line[0]+'/2'
+                else:
+                    read_id=line[0]+'/1'
                 bin_classification=''
                 contig_classification=''
                 contig_dm=''
                 read_dm=''
+                
                 if not line[1]=='no taxid assigned':
                     bin_classification=line[2]
                     if bin_classification=='':
@@ -277,6 +280,8 @@ def import_RAT_results(RAT_read_mapping):
                             read_dm=line[5].strip().replace('fw: ', '').replace('rev: ', '')
                 read2classification[read_id]=[bin_classification, contig_classification,
                                               contig_dm, read_dm]
+                if 'S0R10000127' in read_id:
+                    print(f'{read_id} annotations: {bin_classification}, {contig_dm},{contig_classification},{read_dm}')
     return read2classification
 
 
@@ -289,9 +294,9 @@ def import_RAT_results_robust(RAT_read_mapping, mode):
                 line=line.rstrip().split('\t')
 #                print(line)
                 if line[0]==read_id.split('/')[0]:
-                    read_id=line[0]+'/1'
-                else:
                     read_id=line[0]+'/2'
+                else:
+                    read_id=line[0]+'/1'
                 bin_classification=''
                 contig_classification=''
                 contig_dm=''
@@ -311,10 +316,15 @@ def import_RAT_results_robust(RAT_read_mapping, mode):
                             contig_classification=''
 
                     
-                read2classification[read_id]=[bin_classification, 
-                                              contig_classification, 
-                                              contig_dm, 
-                                              read_dm]
+                    read2classification[read_id]=[bin_classification, 
+                                                  contig_classification, 
+                                                  contig_dm, 
+                                                  read_dm]
+                else:
+                    read2classification[read_id]=[bin_classification, 
+                                                  contig_classification, 
+                                                  contig_dm, 
+                                                  read_dm]
     return read2classification
                     
 
@@ -322,8 +332,9 @@ def compare_results(CAMI_official, compare_official):
     correct={'correct': len(official_ranks)*[0],
              'unclassified': len(official_ranks)*[0],
              'incorrect': len(official_ranks)*[0]}
-    for read in compare_official:
+    for read in CAMI_official:
         for i in range(len(CAMI_official[read])):
+
             try:
                 if compare_official[read][i] == CAMI_official[read][i]:
                     correct['correct'][i]+=1
@@ -418,7 +429,7 @@ if __name__=='__main__':
     elif mode in ['robust', 'contig']:
         r2c=import_RAT_results_robust('/net/phage/linuxhome/mgx/people/tina/CAMI_II/'
                                '{}/simulation_short_read/{}_sample_{}/'
-                               'RAT_NR/{}{}.read2classification.txt'.format(env,prefix,smp,env,smp),
+                               'RAT_NR/{}{}_4.read2classification.txt'.format(env,prefix,smp,env,smp),
                                mode)
     
     print('{} {}{}: get official lineages for RAT results'.format(timestamp(), env, smp))
@@ -427,7 +438,7 @@ if __name__=='__main__':
     print('{} load CAMI classification'.format(timestamp()))
     CAMI_r2c=import_CAMI_results('/net/phage/linuxhome/mgx/people/tina/CAMI_II/'
                     '{}/simulation_short_read/{}_sample_{}/'
-                    'reads/reads_mapping.tsv'.format(env,prefix,smp),
+                    'reads/unknowns_reads_mapping.tsv'.format(env,prefix,smp),
                     taxid2parent, taxid2rank)
     
 #    free some memory
@@ -439,7 +450,7 @@ if __name__=='__main__':
     correct['corr_frac']=[i/(len(CAMI_r2c)) for i in correct['correct']]
 
     with open('/net/phage/linuxhome/mgx/people/tina/RAT/revision/{}/RAT/'
-              'r2c_{}{}_nr_{}_2.json'.format(env,env,smp,mode), 'w+') as outf:
+              'r2c_unknowns_{}{}_nr_{}_2.json'.format(env,env,smp,mode), 'w+') as outf:
         outf.write(json.dumps(correct, indent=4))
     print('{} Done!'.format(timestamp()))
 

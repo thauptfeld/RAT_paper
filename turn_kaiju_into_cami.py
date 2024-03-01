@@ -46,7 +46,14 @@ def turn_kaiju_into_cami(kaiju_prefix, taxid2parent, taxid2rank,
                                                           rank, tax_dict[rank][taxon]['lineage'],
                                                           tax_dict[rank][taxon]['taxon'],
                                                           tax_dict[rank][taxon]['percent']))
-            outf2.write(json.dumps(tax_dict, indent=4))
+            tax_dict_json={}
+            for rank in tax_dict:
+                tax_dict_json[rank]={}
+                for taxid in tax_dict[rank]:
+                    if tax_dict[rank][taxid]['percent']>minimum:
+                        tax_dict_json[rank][taxid]=tax_dict[rank][taxid]
+                    
+            outf2.write(json.dumps(tax_dict_json, indent=4))
 
 
                         
@@ -128,11 +135,14 @@ if __name__=='__main__':
     taxid2rank['469586']='species'
     taxid2rank['1834200']='species'
     taxid2rank['665937']='species'
-    # taxid2parent['12884']='1'
-    # taxid2rank['12884']='superkingdom'
+    taxid2parent['12884']='1'
+    taxid2rank['12884']='superkingdom'
 
     # Minimum is fraction, not percent!!
-
+    
+    
+    
+    # ### Groundwater
     # for i in [19,22,23]:
     #     for j in range(1,7):
     #         print('W{}-{}...'.format(i,j))
@@ -155,31 +165,75 @@ if __name__=='__main__':
     #                                       'W{}-{}.kaiju.0.1.profile'.format(i,j), 0.001)
     
     
+    # ### Mousegut
+    # for i in [6,13,23,25,26,30,33,34,38,53]:
+    #     print('smp{}...'.format(i))
+    #     print('\tCounting classified reads...')
+    #     classified_reads=gen_classified_reads('/net/phage/linuxhome/mgx/people/'
+    #                                           'tina/RAT/new_read_classifier_results/'
+    #                                           'smp{}/kaiju/smp{}.kaiju.out'.format(i,i))
+    #     print('\tCalculating domain abundances...')
+    #     domain=calculate_domain_from_phylum('/net/phage/linuxhome/mgx/people/tina/'
+    #                                         'RAT/new_read_classifier_results/'
+    #                                         'smp{}/kaiju/smp{}.phylum.kaiju_table.tsv'.format(i,i), 
+    #                                         taxid2parent, taxid2rank, classified_reads)
+    #     print('\tWriting Kaiju output as CAMI table...')
+    #     tax_dict=turn_kaiju_into_cami('/net/phage/linuxhome/mgx/people/tina/RAT/'
+    #                                   'new_read_classifier_results//smp{}/'
+    #                                   'kaiju/smp{}'.format(i,i), taxid2parent, 
+    #                                   taxid2rank, classified_reads, domain,
+    #                                   '/net/phage/linuxhome/mgx/people/tina/RAT/'
+    #                                   'new_read_classifier_results/smp{}/'
+    #                                   '20230321.smp{}.kaiju.0.001.profile'.format(i,i), 0.00001)
+        # print('\tWriting Kaiju output as CAMI table...')
+        # tax_dict=turn_kaiju_into_cami('/net/phage/linuxhome/mgx/people/tina/RAT/'
+        #                               'new_read_classifier_results//smp{}/'
+        #                               'kaiju/smp{}'.format(i,i), taxid2parent, 
+        #                               taxid2rank, classified_reads, domain,
+        #                               '/net/phage/linuxhome/mgx/people/tina/RAT/'
+        #                               'new_read_classifier_results/smp{}/'
+        #                               '20230130.smp{}.kaiju.nomin.profile'.format(i,i), 0)
     
-    for i in [6,13,23,25,26,30,33,34,38,53]:
-        print('smp{}...'.format(i))
+    
+    ### Marine
+    
+    path_to_results=('/net/phage/linuxhome/dutilh-group/tina/RAT/revision/'
+                      'read_classifiers_new_db_marine/results/')
+    
+    for i in range(0,10):
+        print('marine{}...'.format(i))
         print('\tCounting classified reads...')
-        classified_reads=gen_classified_reads('/net/phage/linuxhome/mgx/people/'
-                                              'tina/RAT/new_read_classifier_results/'
-                                              'smp{}/kaiju/smp{}.kaiju.out'.format(i,i))
+        classified_reads=gen_classified_reads(path_to_results+'marine{}/kaiju/'
+                                              'marine{}.kaiju.out'.format(i,i))
         print('\tCalculating domain abundances...')
-        domain=calculate_domain_from_phylum('/net/phage/linuxhome/mgx/people/tina/'
-                                            'RAT/new_read_classifier_results/'
-                                            'smp{}/kaiju/smp{}.phylum.kaiju_table.tsv'.format(i,i), 
+        domain=calculate_domain_from_phylum(path_to_results+'marine{}/kaiju/'
+                                            'marine{}.phylum.kaiju_table.tsv'.format(i,i), 
                                             taxid2parent, taxid2rank, classified_reads)
         print('\tWriting Kaiju output as CAMI table...')
-        tax_dict=turn_kaiju_into_cami('/net/phage/linuxhome/mgx/people/tina/RAT/'
-                                      'new_read_classifier_results//smp{}/'
-                                      'kaiju/smp{}'.format(i,i), taxid2parent, 
+        tax_dict=turn_kaiju_into_cami(path_to_results+'marine{}/kaiju/marine{}'.format(i,i), 
+                                      taxid2parent, 
                                       taxid2rank, classified_reads, domain,
-                                      '/net/phage/linuxhome/mgx/people/tina/RAT/'
-                                      'new_read_classifier_results/smp{}/'
-                                      '20230130.smp{}.kaiju.0.001.profile'.format(i,i), 0.001)
+                                      path_to_results+
+                                      '20230927.marine{}.kaiju.0.001.profile'.format(i,i), 0.00001)
+        
+    
+    
+    ### Plant
+    path_to_results=('/net/phage/linuxhome/dutilh-group/tina/RAT/revision/'
+                     'read_classifiers_new_db_plant/results/')
+    
+    for i in [2,3,5,8,10,12,14,15,18,19]:
+        print('plant{}...'.format(i))
+        print('\tCounting classified reads...')
+        classified_reads=gen_classified_reads(path_to_results+'plant{}/kaiju/'
+                                              'plant{}.kaiju.out'.format(i,i))
+        print('\tCalculating domain abundances...')
+        domain=calculate_domain_from_phylum(path_to_results+'plant{}/kaiju/'
+                                            'plant{}.phylum.kaiju_table.tsv'.format(i,i), 
+                                            taxid2parent, taxid2rank, classified_reads)
         print('\tWriting Kaiju output as CAMI table...')
-        tax_dict=turn_kaiju_into_cami('/net/phage/linuxhome/mgx/people/tina/RAT/'
-                                      'new_read_classifier_results//smp{}/'
-                                      'kaiju/smp{}'.format(i,i), taxid2parent, 
+        tax_dict=turn_kaiju_into_cami(path_to_results+'plant{}/kaiju/plant{}'.format(i,i), 
+                                      taxid2parent, 
                                       taxid2rank, classified_reads, domain,
-                                      '/net/phage/linuxhome/mgx/people/tina/RAT/'
-                                      'new_read_classifier_results/smp{}/'
-                                      '20230130.smp{}.kaiju.nomin.profile'.format(i,i), 0)
+                                      path_to_results+
+                                      '20230927.plant{}.kaiju.0.001.profile'.format(i,i), 0.00001)

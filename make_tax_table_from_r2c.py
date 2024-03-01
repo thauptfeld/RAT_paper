@@ -136,12 +136,12 @@ if __name__=='__main__':
     print('{} load complete abundance'.format(timestamp()))
     complete2rank=complete_abundance_to_dict('/net/phage/linuxhome/mgx/people/tina/CAMI_II/'
                     '{}/simulation_short_read/{}_sample_{}/RAT_NR/'
-                    '{}{}.sensitive.complete.abundance.txt'.format(env,prefix,smp,env,smp))
+                    '{}{}_4.complete.abundance.txt'.format(env,prefix,smp,env,smp))
     
     print('{} Making {} abundance table for sample {}{}'.format(timestamp(), mode, env, smp))
     r2c_mode=r2c_to_complete('/net/phage/linuxhome/mgx/people/tina/CAMI_II/'
                     '{}/simulation_short_read/{}_sample_{}/RAT_NR/'
-                    '{}{}.read2classification.txt'.format(env,prefix,smp,env,smp),
+                    '{}{}_4.read2classification.txt'.format(env,prefix,smp,env,smp),
                     '/net/phage/linuxhome/mgx/people/tina/CAMI_II/'
                     '{}/simulation_short_read/{}_sample_{}/RAT_NR/'
                     '{}{}.{}.complete.abundance.txt'.format(env,prefix,smp,env,smp,mode),

@@ -22,7 +22,10 @@ def summarize_RAT_for_CAMI(rat_table, output_file, minimum=0):
                 lineage=pieces[0].split(';')
                 frac_reads=float(pieces[2])
                 # ranks is piece 4 for new RAT tables, piece 5 for old RAT tables
-                ranks=pieces[5].split(';')
+                try:
+                    ranks=pieces[4].split(';')
+                except IndexError:
+                    print(lineage)
 
                 off_lineage=len(off_ranks)*['']
                 for r in ranks:
@@ -63,7 +66,16 @@ def summarize_RAT_for_CAMI(rat_table, output_file, minimum=0):
                                                           rank, tax_dict[rank][taxon]['lineage'],
                                                           tax_dict[rank][taxon]['taxon'],
                                                           tax_dict[rank][taxon]['percent']))
-            outf2.write(json.dumps(tax_dict, indent=4))
+            
+            tax_dict_json={}
+            for rank in tax_dict:
+                tax_dict_json[rank]={}
+                for taxid in tax_dict[rank]:
+                    if tax_dict[rank][taxid]['percent']>minimum:
+                        tax_dict_json[rank][taxid]=tax_dict[rank][taxid]
+                    
+            outf2.write(json.dumps(tax_dict_json, indent=4))
+            
     
 
 
@@ -101,8 +113,8 @@ if __name__=='__main__':
     CAT_folder='/net/mgx/linuxhome/mgx/people/bastiaan/phage-files/CAT_prepare/CAT_prepare_20190108/'
     env=sys.argv[1]
     smp=sys.argv[2]
-    mode=sys.argv[3]
-    cut_off=float(sys.argv[4])
+    # mode=sys.argv[3]
+    cut_off=float(sys.argv[3])
     
     
     if env=='marine':
@@ -111,11 +123,24 @@ if __name__=='__main__':
         prefix='2019.09.27_13.59.10'
         
     path_to_tina='/net/phage/linuxhome/mgx/people/tina/'
-    abundance=(path_to_tina + 'CAMI_II/{}/simulation_short_read/{}_sample_{}/'
-               'RAT_NR/{}{}.{}.complete.abundance.txt'
-               ''.format(env,prefix,smp,env,smp,mode))
+    
+    if env=='mousegut':
+        abundance=(path_to_tina + 'RAT/revision/mousegut_GTDB/smp{}.GTDB_.'
+                    'complete.abundance.txt'
+                    ''.format(smp))
+    elif env not in ('mousegut', 'groundwater'):
+        abundance=(path_to_tina + 'CAMI_II/{}/simulation_short_read/{}_sample_{}/'
+                    'RAT_GTDB/{}{}_2.complete.abundance.txt'
+                    ''.format(env,prefix,smp,env,smp))
+        
+    if env=='groundwater':
+        abundance=(path_to_tina + 'RAT/groundwater_RAT_sensitive/2018/GTDB/'
+                   '{}/{}.GTDB.complete.abundance.txt'
+                    ''.format(smp,smp))
+    
+    
     outfile=(path_to_tina + 'RAT/revision/{}/profiles/'
-             '{}{}.{}.{}.profile'.format(env,env,smp,mode,cut_off))
+              '20231201.{}{}.{}.gtdb.profile'.format(env,env,smp,cut_off))
     
     summarize_RAT_for_CAMI(abundance,outfile,cut_off)
     

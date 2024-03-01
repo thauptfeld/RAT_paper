@@ -115,10 +115,11 @@ def write_evaluation(stats, outfile):
     with open(outfile, 'w+') as outf:
         for metric in ['TP', 'FN', 'FP','sensitivity', 'precision', 'l1']:
             for rank in ranks:
-                outf.write('{},{}'.format(metric, rank))
                 for sample in stats:
-                    outf.write(',{}'.format(stats[sample][rank][metric]))
-                outf.write('\n')
+                    outf.write('{},{},{},{}\n'.format(sample,
+                                                      rank,
+                                                      metric,
+                                                      stats[sample][rank][metric]))
 
 
 
@@ -137,19 +138,19 @@ if __name__=='__main__':
     #                      'CAMI_II_mousegut_w_dm/10_samples_{}_stats.csv'.format(m))
     
     
-    for m in ['kraken2', 'kaiju', 'centrifuge', 'bracken']:
-        stats={}
-        for s in [6,13,23,25,26,30,33,34,38,53]:
-            stats['smp{}'.format(s)]=evaluate_RAT(
-                '/net/phage/linuxhome/mgx/people/tina/RAT/new_read_classifier_results/'
-                '20230130.smp{}.{}.0.001.json'.format(s,m), 
-                '/net/phage/linuxhome/mgx/people/tina/CAMI/CAMI_II/mousegut/19122017_mousegut_scaffolds/'
-                'taxonomic_profile_{}.txt'.format(s))
+    # for m in ['kraken2', 'kaiju', 'centrifuge', 'bracken']:
+    #     stats={}
+    #     for s in [6,13,23,25,26,30,33,34,38,53]:
+    #         stats['smp{}'.format(s)]=evaluate_RAT(
+    #             '/net/phage/linuxhome/mgx/people/tina/RAT/new_read_classifier_results/'
+    #             '20230321_profiles/20230321.smp{}.{}.0.001.json'.format(s,m), 
+    #             '/net/phage/linuxhome/mgx/people/tina/CAMI/CAMI_II/mousegut/19122017_mousegut_scaffolds/'
+    #             'taxonomic_profile_{}.txt'.format(s))
         
     
-        write_evaluation(stats, '/net/phage/linuxhome/mgx/people/tina/RAT/'
-                          'new_read_classifier_results/'
-                          '20230130.10_samples_{}_stats_t.0.001.csv'.format(m))
+    #     write_evaluation(stats, '/net/phage/linuxhome/mgx/people/tina/RAT/'
+    #                       'new_read_classifier_results/'
+    #                       '20230321.10_samples_{}_stats_t.0.001.csv'.format(m))
         
     # for m in ['wbin', 'wmetabat', 'nobin','robust']:
     #     stats={}
@@ -163,3 +164,43 @@ if __name__=='__main__':
         
     #         write_evaluation(stats, '/net/phage/linuxhome/mgx/people/tina/RAT/benchmark/'
     #                           'CAMI_II_mousegut_w_dm/stats_all/10_samples_{}_oc_stats.csv'.format(m))
+
+    
+    ### Revisions
+    
+    ## Read classifiers
+    
+    for m in ['kraken2', 'kaiju', 'centrifuge', 'bracken']:
+        stats={}
+        for s in [2,3,5,8,10,12,14,15,18,19]:
+            stats['plant{}'.format(s)]=evaluate_RAT(
+                '../profiles/20230927.plant{}.{}.0.001.json'.format(s,m), 
+                '../reference/gs_rhizosphere.noplasmids_{}.profile'.format(s))
+
+        write_evaluation(stats, '../evaluations/'
+                          '20231024.plant_{}_stats.0.001.csv'.format(m))
+        for s in range(0,10):
+            stats['marine{}'.format(s)]=evaluate_RAT(
+                '../profiles/20230927.marine{}.{}.0.001.json'.format(s,m), 
+                '../reference/gs_marine.noplasmids_{}.profile'.format(s))
+        write_evaluation(stats, '../evaluations/'
+                          '20231024.marine_{}_stats.0.001.csv'.format(m))          
+        
+    ## RAT
+    for m in ['robust', 'sensitive', 'contig']:
+        stats={}
+        for s in [2,3,5,8,10,12,14,15,18,19]:
+            stats['plant{}'.format(s)]=evaluate_RAT(
+                '../profiles/20231020.plant{}.{}.1e-05.json'.format(s,m), 
+                '../reference/gs_rhizosphere.noplasmids_{}.profile'.format(s))
+
+        write_evaluation(stats, '../evaluations/'
+                          '20231024.plant_{}_stats.0.001.csv'.format(m))
+        for s in range(0,10):
+            stats['marine{}'.format(s)]=evaluate_RAT(
+                '../profiles/20231020.marine{}.{}.1e-05.json'.format(s,m), 
+                '../reference/gs_marine.noplasmids_{}.profile'.format(s))
+        write_evaluation(stats, '../evaluations/'
+                          '20231024.marine_{}_stats.0.001.csv'.format(m))       
+            
+            

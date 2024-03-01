@@ -22,9 +22,9 @@ def turn_kraken_into_cami(report_file, taxid2parent, taxid2rank, output_file, mi
     most_recent={'D': '', 'P': '', 'C': '', 'O': '', 'F': '', 'G': ''}
     with open(report_file) as report:
         for line in report:
-            if line.strip().endswith('root'):
+            if line.split()[4]=='1':
                 classified_reads=float(line.split()[1])
-            
+                # print(classified_reads)
             
             not_off_rank=line.split()[3]
             if not_off_rank in most_recent:
@@ -73,7 +73,14 @@ def turn_kraken_into_cami(report_file, taxid2parent, taxid2rank, output_file, mi
                                                           rank, tax_dict[rank][taxon]['lineage'],
                                                           tax_dict[rank][taxon]['taxon'],
                                                           tax_dict[rank][taxon]['percent']))
-            outf2.write(json.dumps(tax_dict, indent=4))
+            tax_dict_json={}
+            for rank in tax_dict:
+                tax_dict_json[rank]={}
+                for taxid in tax_dict[rank]:
+                    if tax_dict[rank][taxid]['percent']>minimum:
+                        tax_dict_json[rank][taxid]=tax_dict[rank][taxid]
+                    
+            outf2.write(json.dumps(tax_dict_json, indent=4))
 
 
 
@@ -146,53 +153,53 @@ if __name__=='__main__':
     # taxid2rank['469586']='species'
     # taxid2rank['1834200']='species'
     # taxid2rank['665937']='species'
-    for i in [6,13,23,25,26,30,33,34,38,53]:
-        # turn_kraken_into_cami('/net/phage/linuxhome/mgx/people/tina/RAT/'
-        #                       'new_read_classifier_results/smp{}/'
-        #                       'centrifuge/smp{}.centrifuge.kreport.txt'.format(i,i), 
-        #                       taxid2parent, taxid2rank, 
-        #                       '/net/phage/linuxhome/mgx/people/tina/RAT/'
-        #                       'new_read_classifier_results/'
-        #                       '20230130.smp{}.centrifuge.0.001.profile'.format(i), 0.001)
-        # turn_kraken_into_cami('/net/phage/linuxhome/mgx/people/tina/RAT/'
-        #                       'new_read_classifier_results/smp{}/'
-        #                       'centrifuge/smp{}.centrifuge.kreport.txt'.format(i,i), 
-        #                       taxid2parent, taxid2rank, 
-        #                       '/net/phage/linuxhome/mgx/people/tina/RAT/'
-        #                       'new_read_classifier_results/'
-        #                       '20230130.smp{}.centrifuge.nomin.profile'.format(i), 0)
+    # for i in [6,13,23,25,26,30,33,34,38,53]:
+    #     turn_kraken_into_cami('/net/phage/linuxhome/mgx/people/tina/RAT/'
+    #                           'new_read_classifier_results/smp{}/'
+    #                           'centrifuge/smp{}.centrifuge.kreport.txt'.format(i,i), 
+    #                           taxid2parent, taxid2rank, 
+    #                           '/net/phage/linuxhome/mgx/people/tina/RAT/'
+    #                           'new_read_classifier_results/'
+    #                           '20230321.smp{}.centrifuge.0.001.profile'.format(i), 0.00001)
+    #     # turn_kraken_into_cami('/net/phage/linuxhome/mgx/people/tina/RAT/'
+    #     #                       'new_read_classifier_results/smp{}/'
+    #     #                       'centrifuge/smp{}.centrifuge.kreport.txt'.format(i,i), 
+    #     #                       taxid2parent, taxid2rank, 
+    #     #                       '/net/phage/linuxhome/mgx/people/tina/RAT/'
+    #     #                       'new_read_classifier_results/'
+    #     #                       '20230130.smp{}.centrifuge.nomin.profile'.format(i), 0)
 
 
-        turn_kraken_into_cami('/net/phage/linuxhome/mgx/people/tina/RAT/'
-                              'new_read_classifier_results/smp{}/'
-                              'kraken2/smp{}.kraken2_report_bracken_species.out'.format(i,i), 
-                              taxid2parent, taxid2rank, 
-                              '/net/phage/linuxhome/mgx/people/tina/RAT/'
-                              'new_read_classifier_results/'
-                              '20230130.smp{}.bracken.0.001.profile'.format(i), 0.001)
-        turn_kraken_into_cami('/net/phage/linuxhome/mgx/people/tina/RAT/'
-                              'new_read_classifier_results/smp{}/'
-                              'kraken2/smp{}.kraken2_report_bracken_species.out'.format(i,i), 
-                              taxid2parent, taxid2rank, 
-                              '/net/phage/linuxhome/mgx/people/tina/RAT/'
-                              'new_read_classifier_results/'
-                              '20230130.smp{}.bracken.nomin.profile'.format(i), 0)
+    #     turn_kraken_into_cami('/net/phage/linuxhome/mgx/people/tina/RAT/'
+    #                           'new_read_classifier_results/smp{}/'
+    #                           'kraken2/smp{}.kraken2_report_bracken_species.out'.format(i,i), 
+    #                           taxid2parent, taxid2rank, 
+    #                           '/net/phage/linuxhome/mgx/people/tina/RAT/'
+    #                           'new_read_classifier_results/'
+    #                           '20230321.smp{}.bracken.0.001.profile'.format(i), 0.00001)
+    #     # turn_kraken_into_cami('/net/phage/linuxhome/mgx/people/tina/RAT/'
+    #     #                       'new_read_classifier_results/smp{}/'
+    #     #                       'kraken2/smp{}.kraken2_report_bracken_species.out'.format(i,i), 
+    #     #                       taxid2parent, taxid2rank, 
+    #     #                       '/net/phage/linuxhome/mgx/people/tina/RAT/'
+    #     #                       'new_read_classifier_results/'
+    #     #                       '20230130.smp{}.bracken.nomin.profile'.format(i), 0)
         
         
-        turn_kraken_into_cami('/net/phage/linuxhome/mgx/people/tina/RAT/'
-                              'new_read_classifier_results/smp{}/'
-                              'kraken2/smp{}.kraken2_report.out'.format(i,i), 
-                              taxid2parent, taxid2rank, 
-                              '/net/phage/linuxhome/mgx/people/tina/RAT/'
-                              'new_read_classifier_results/'
-                              '20230130.smp{}.kraken2.0.001.profile'.format(i), 0.001)
-        turn_kraken_into_cami('/net/phage/linuxhome/mgx/people/tina/RAT/'
-                              'new_read_classifier_results/smp{}/'
-                              'kraken2/smp{}.kraken2_report.out'.format(i,i), 
-                              taxid2parent, taxid2rank, 
-                              '/net/phage/linuxhome/mgx/people/tina/RAT/'
-                              'new_read_classifier_results/'
-                              '20230130.smp{}.kraken2.nomin.profile'.format(i), 0)
+    #     turn_kraken_into_cami('/net/phage/linuxhome/mgx/people/tina/RAT/'
+    #                           'new_read_classifier_results/smp{}/'
+    #                           'kraken2/smp{}.kraken2_report.out'.format(i,i), 
+    #                           taxid2parent, taxid2rank, 
+    #                           '/net/phage/linuxhome/mgx/people/tina/RAT/'
+    #                           'new_read_classifier_results/'
+    #                           '20230321.smp{}.kraken2.0.001.profile'.format(i), 0.00001)
+    #     # turn_kraken_into_cami('/net/phage/linuxhome/mgx/people/tina/RAT/'
+    #     #                       'new_read_classifier_results/smp{}/'
+    #     #                       'kraken2/smp{}.kraken2_report.out'.format(i,i), 
+    #     #                       taxid2parent, taxid2rank, 
+    #     #                       '/net/phage/linuxhome/mgx/people/tina/RAT/'
+    #     #                       'new_read_classifier_results/'
+    #     #                       '20230130.smp{}.kraken2.nomin.profile'.format(i), 0)
 
 
 
@@ -226,3 +233,99 @@ if __name__=='__main__':
 #                                   '/net/phage/linuxhome/mgx/people/tina/RAT/'
 #                                   'benchmark/CAMI_II_mousegut_w_dm/wageningen_kaiju_kraken_centr/'
 #                                   'W{}-{}.bracken.0.1.profile'.format(i,j), 0.001)
+        
+        
+    path_to_results=('/net/phage/linuxhome/dutilh-group/tina/RAT/revision/'
+                     'read_classifiers_new_db_plant/results/')
+    for i in [2,3,5,8,10,12,14,15,18,19]:
+        print('Sample plant{}...'.format(i))
+        print('\tCentrifuge')
+        turn_kraken_into_cami(path_to_results+'plant{}/'
+                              'centrifuge/plant{}.centrifuge.kreport.txt'.format(i,i), 
+                              taxid2parent, taxid2rank, 
+                              path_to_results+
+                              '20230927.plant{}.centrifuge.0.001.profile'.format(i), 0.00001)
+        # turn_kraken_into_cami('/net/phage/linuxhome/mgx/people/tina/RAT/'
+        #                       'new_read_classifier_results/smp{}/'
+        #                       'centrifuge/smp{}.centrifuge.kreport.txt'.format(i,i), 
+        #                       taxid2parent, taxid2rank, 
+        #                       '/net/phage/linuxhome/mgx/people/tina/RAT/'
+        #                       'new_read_classifier_results/'
+        #                       '20230130.smp{}.centrifuge.nomin.profile'.format(i), 0)
+
+        print('\tBracken')
+        turn_kraken_into_cami(path_to_results+'plant{}/'
+                              'kraken2/plant{}.kraken2_report_bracken_species.out'.format(i,i), 
+                              taxid2parent, taxid2rank, 
+                              path_to_results+
+                              '20230927.plant{}.bracken.0.001.profile'.format(i), 0.00001)
+        # turn_kraken_into_cami('/net/phage/linuxhome/mgx/people/tina/RAT/'
+        #                       'new_read_classifier_results/smp{}/'
+        #                       'kraken2/smp{}.kraken2_report_bracken_species.out'.format(i,i), 
+        #                       taxid2parent, taxid2rank, 
+        #                       '/net/phage/linuxhome/mgx/people/tina/RAT/'
+        #                       'new_read_classifier_results/'
+        #                       '20230130.smp{}.bracken.nomin.profile'.format(i), 0)
+        
+        print('\tKraken')
+        turn_kraken_into_cami(path_to_results+'plant{}/'
+                              'kraken2/plant{}.kraken2_report.out'.format(i,i), 
+                              taxid2parent, taxid2rank, 
+                              path_to_results+
+                              '20230927.plant{}.kraken2.0.001.profile'.format(i), 0.00001)
+        # turn_kraken_into_cami('/net/phage/linuxhome/mgx/people/tina/RAT/'
+        #                       'new_read_classifier_results/smp{}/'
+        #                       'kraken2/smp{}.kraken2_report.out'.format(i,i), 
+        #                       taxid2parent, taxid2rank, 
+        #                       '/net/phage/linuxhome/mgx/people/tina/RAT/'
+        #                       'new_read_classifier_results/'
+        #                       '20230130.smp{}.kraken2.nomin.profile'.format(i), 0)
+        
+        
+        
+        
+    path_to_results=('/net/phage/linuxhome/dutilh-group/tina/RAT/revision/'
+                     'read_classifiers_new_db_marine/results/')
+    for i in range(0,10):
+        print('Sample marine{}...'.format(i))
+        print('\tCentrifuge')
+        turn_kraken_into_cami(path_to_results+'marine{}/'
+                              'centrifuge/marine{}.centrifuge.kreport.txt'.format(i,i), 
+                              taxid2parent, taxid2rank, 
+                              path_to_results+
+                              '20230927.marine{}.centrifuge.0.001.profile'.format(i), 0.00001)
+        # turn_kraken_into_cami('/net/phage/linuxhome/mgx/people/tina/RAT/'
+        #                       'new_read_classifier_results/smp{}/'
+        #                       'centrifuge/smp{}.centrifuge.kreport.txt'.format(i,i), 
+        #                       taxid2parent, taxid2rank, 
+        #                       '/net/phage/linuxhome/mgx/people/tina/RAT/'
+        #                       'new_read_classifier_results/'
+        #                       '20230130.smp{}.centrifuge.nomin.profile'.format(i), 0)
+
+        print('\tBracken')
+        turn_kraken_into_cami(path_to_results+'marine{}/'
+                              'kraken2/marine{}.kraken2_report_bracken_species.out'.format(i,i), 
+                              taxid2parent, taxid2rank, 
+                              path_to_results+
+                              '20230927.marine{}.bracken.0.001.profile'.format(i), 0.00001)
+        # turn_kraken_into_cami('/net/phage/linuxhome/mgx/people/tina/RAT/'
+        #                       'new_read_classifier_results/smp{}/'
+        #                       'kraken2/smp{}.kraken2_report_bracken_species.out'.format(i,i), 
+        #                       taxid2parent, taxid2rank, 
+        #                       '/net/phage/linuxhome/mgx/people/tina/RAT/'
+        #                       'new_read_classifier_results/'
+        #                       '20230130.smp{}.bracken.nomin.profile'.format(i), 0)
+        
+        print('\tKraken')
+        turn_kraken_into_cami(path_to_results+'marine{}/'
+                              'kraken2/marine{}.kraken2_report.out'.format(i,i), 
+                              taxid2parent, taxid2rank, 
+                              path_to_results+
+                              '20230927.marine{}.kraken2.0.001.profile'.format(i), 0.00001)
+        # turn_kraken_into_cami('/net/phage/linuxhome/mgx/people/tina/RAT/'
+        #                       'new_read_classifier_results/smp{}/'
+        #                       'kraken2/smp{}.kraken2_report.out'.format(i,i), 
+        #                       taxid2parent, taxid2rank, 
+        #                       '/net/phage/linuxhome/mgx/people/tina/RAT/'
+        #                       'new_read_classifier_results/'
+        #                       '20230130.smp{}.kraken2.nomin.profile'.format(i), 0)
